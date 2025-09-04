@@ -8,7 +8,15 @@ centers_list = []
 x_axes_list = []
 y_axes_list = []
 z_axes_list = []
+
+accept_data_list = []
+init_offset = None
 isCollect = False
+
+def init():
+    global init_offset
+    #init_offset = np.array([-0.06743418, 0.06810218, 0.00329000])
+    init_offset = np.array([-0.06841773, 0.06819089, 0.00421293])
 
 
 def rotationMatrixToEulerAngles(R):
@@ -67,14 +75,6 @@ def compute_pose_from_corners(corner3d: np.ndarray):
 
     return R, center.reshape(3, 1)
 
-#def get_probe_tip_pos(offset, probe_centers, axes):
-#    tip_position = np.zeros((3))
-#    tip_position = probe_centers + \
-#                     axes[0] * offset[0] + \
-#                     axes[1] * offset[1] + \
-#                     axes[2] * offset[2]
-#    return tip_position
-
 def get_probe_tip_pos(offset: np.ndarray, probe_center: np.ndarray, R: np.ndarray) -> np.ndarray:
     """
     마커의 자세(R, t)와 캘리브레이션된 오프셋을 사용하여 프로브 팁의 월드 좌표를 계산합니다.
@@ -97,6 +97,8 @@ def get_probe_tip_pos(offset: np.ndarray, probe_center: np.ndarray, R: np.ndarra
 
 # Probe Calibration
 def calculate_optimal_offset(prove_centers, x_axes, y_axes, z_axes):
+    global accept_data_list
+    global init_offset
     """
     C++의 CalProveOffset 함수를 Python으로 변환한 함수입니다.
     여러 측정 자세에서 계산된 월드 좌표들의 편차를 최소화하는 최적의 3D 오프셋을 찾습니다.
@@ -128,16 +130,17 @@ def calculate_optimal_offset(prove_centers, x_axes, y_axes, z_axes):
     # 3차 캘리브레이션
     #current_pos = np.array([-0.06771506, 0.06812835, 0.00385960])
     # 4차 캘리브레이션
-    current_pos = np.array([-0.06743418, 0.06810218, 0.00329000])
+    #current_pos = np.array([-0.06743418, 0.06810218, 0.00329000])
     total_grid_points = side_num ** 3
     num_proves = len(prove_centers)
     
     print("🚀 최적 오프셋 탐색을 시작합니다...")
-    
+    accept_offset_list = []
+    accept_error_list = []
     # 2. 순차 대입법 기반의 반복 최적화 루프
     for s in range(step_num):
         # 현재 탐색 공간(정육면체)의 시작점과 그리드 간격 계산
-        start_point = current_pos - step_size / 2.0
+        start_point = init_offset - step_size / 2.0
         grid_step = step_size / side_num
         
         # 각 그리드 포인트의 좌표와 오차를 저장할 배열
@@ -182,15 +185,23 @@ def calculate_optimal_offset(prove_centers, x_axes, y_axes, z_axes):
         
         # 진행 상황 출력 (mm 단위로 변환)
         pos_mm = current_pos  #* 1000
-        error_mm = min_error  * 1000
+        error_mm = min_error * 1000
         print(f"[{s+1}/{step_num}] 오프셋: ({pos_mm[0]:.6f}, {pos_mm[1]:.6f}, {pos_mm[2]:.6f}) m | 최소 오차: {error_mm:.4f} mm")
+        
+        
+        accept_offset_list.append(pos_mm)
+        accept_error_list.append(error_mm)
+
 
     print("\n✅ 탐색 완료!")
-    return current_pos, min_error
+    
+    return prove_centers, accept_offset_list, accept_error_list
 
 def live_aruco_detection():
     global centers_list, x_axes_list, y_axes_list, z_axes_list
     global isCollect
+    global accept_data_list
+    global init_offset
     # ZED 카메라 객체 생성 및 초기화
     zed = sl.Camera()
     input_type = sl.InputType()
@@ -268,9 +279,11 @@ def live_aruco_detection():
             win_size = (5, 5)
             zero_zone = (-1, -1)
 
+            # 수집 시작
             if cv2.waitKey(1) & 0xFF == ord('c'):
                 isCollect = True
                 print(f"isCollect: {isCollect}")
+            # 수집 종료
             if cv2.waitKey(1) & 0xFF == ord('v'):
                 isCollect = False
                 print(f"isCollect: {isCollect}")
@@ -356,26 +369,37 @@ def live_aruco_detection():
                         print(f"🎯 ID {int(id_l)} 회전 값 (cv)(도): {roll * 180/math.pi}, {pitch* 180/math.pi}, {yaw* 180/math.pi}")
                         
                         if int(id_l) == 10:
-                            offset = np.array([-0.06743418, 0.06810218, 0.00329000])
+                            offset = init_offset * 1000
                             probe_center = points_3d_cv.ravel()
                             #axes = np.ndarray(R[:, 0], R[:, 1], R[:, 2])
-                            probe_tip_pos = get_probe_tip_pos(offset, probe_center, R)
-                            print(f"probe_centerpos: {probe_center} \n probe_tip_pos: {probe_tip_pos} \n delta: {probe_tip_pos - probe_center}")
+                            probe_tip_pos = get_probe_tip_pos(offset, probe_center, R) 
+                            print(f"probe_centerpos: {probe_center} \n probe_tip_pos: {probe_tip_pos}")
+                            # 3. cv2.projectPoints()를 위한 입력값 준비
+                            # ZED의 3D 좌표는 이미 왼쪽 카메라 기준이므로 rvec, tvec은 0으로 설정
+                            rvec = np.zeros((3, 1))
+                            tvec = np.zeros((3, 1))
 
+                            # 투영할 3D 포인트를 올바른 shape으로 변환: (1, 1, 3)
+                            point_3d_to_project = probe_tip_pos.reshape(1, 1, 3)
 
+                            # 4. 3D 좌표를 2D 픽셀 좌표로 투영
+                            # camera_matrix_L와 intrinsics_L.disto는 미리 계산되어 있어야 함
+                            point_2d_projected, _ = cv2.projectPoints(point_3d_to_project, rvec, tvec, camera_matrix_L, intrinsics_L.disto)
+
+                            # 5. 투영된 2D 좌표를 화면에 그리기
+                            if point_2d_projected is not None:
+                                # pt_2d의 shape은 (1, 1, 2)이므로, 정수형 (x, y) 튜플로 변환
+                                pt_2d = tuple(point_2d_projected.ravel().astype(int))
+
+                                # 왼쪽 카메라 뷰(left_np)에 십자(+) 모양으로 그리기
+                                cv2.drawMarker(left_np, pt_2d, color=(0, 0, 255), markerType=cv2.MARKER_CROSS, 
+                                               markerSize=20, thickness=2)
                         if isCollect: 
-                            print(f"[ADD!] center: {points_3d_cv.ravel()} \n x_axes: {R[:, 0]} \n y_axes: {R[:, 1]} \n z_axes: {R[:, 1]}")
+                            print(f"[ADD!] center: {points_3d_cv.ravel()} \n x_axes: {R[:, 0]} \n y_axes: {R[:, 1]} \n z_axes: {R[:, 2]}")
                             centers_list.append(points_3d_cv.ravel()/1000)
                             x_axes_list.append(R[:, 0])
                             y_axes_list.append(R[:, 1]) 
                             z_axes_list.append(R[:, 2])
-                        
-
-                            #print(f"[ADD!] center: {points_3d_cv.ravel()} \n x_axes: {R[:, 0]} \n y_axes: {R[:, 1]} \n z_axes: {R[:, 1]}")
-                            #centers_list.append(points_3d_cv.ravel()/1000)
-                            #x_axes_list.append(R[:, 0])
-                            #y_axes_list.append(R[:, 1])
-                            #z_axes_list.append(R[:, 2])
                         
                         if len(centers_list) > 9:
                             # 이 코드도 전역 리스트를 올바르게 참조합니다.
@@ -392,8 +416,13 @@ def live_aruco_detection():
                                       f"X_Axis=[{x_axes[i][0]: .4f}, {x_axes[i][1]: .4f}, {x_axes[i][2]: .4f}]")
                             print("="*62 + "\n")
                             # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 여기까지 추가 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-                            calculate_optimal_offset(prove_centers, x_axes, y_axes, z_axes)
-
+                            center, cal_offset, errors = calculate_optimal_offset(prove_centers, x_axes, y_axes, z_axes)
+                            error_avg = 0.0
+                            for error in errors:
+                                error_avg += error
+                            error_avg /= 10
+                            if error_avg < 1.5:
+                                accept_data_list.append((center, cal_offset, errors))
                             # 이 할당문도 이제 전역 리스트를 비우는 동작을 올바르게 수행합니다.
                             centers_list = []
                             x_axes_list = []
@@ -404,6 +433,8 @@ def live_aruco_detection():
                         # 시각화
                         cv2.circle(left_np, tuple(center_l.ravel().astype(int)), 5, (0, 255, 0), -1)
                         cv2.circle(right_np, tuple(center_r.ravel().astype(int)), 5, (0, 0, 255), -1)
+
+
 
             # 화면 출력
             combined = np.hstack((left_np, right_np))
@@ -417,9 +448,44 @@ def live_aruco_detection():
     zed.close()
     cv2.destroyAllWindows()
 
+def check_accept_data():
+    global accept_data_list
+    print("\n" + "="*25 + " 최종 합격 데이터 " + "="*25)
+    dist = 0.0
+    if not accept_data_list:
+        print("수집된 데이터가 없습니다.")
+    else:
+        # enumerate를 사용하면 인덱스 번호(i)와 항목(data)을 한번에 가져올 수 있습니다.
+        for i, data in enumerate(accept_data_list):
+            # data는 (offset, error) 형태의 튜플입니다.
+            pose = data[0]
+            offset = data[1]
+            error = data[2]
+
+            # f-string 서식을 이용해 보기 좋게 출력
+            print(f"--- 데이터 [{i+1}/{len(accept_data_list)}] ---")
+
+            # NumPy 배열을 보기 좋게 출력하기 위한 서식
+            #offset_str = np.array2string(offset, formatter={'float_kind':lambda x: "%.6f" % x})
+            for j in range(len(pose)):
+                dist += pose[j][2]
+                print(f"  center pose: {pose[j]}")
+                print(f"  offset: {offset[j]}")
+                print(f"  error: {error[j]:.4f} mm")
+            dist /= 10
+            dist *= 1000
+            print(f"--- 데이터 [{i+1}/{len(accept_data_list)} 거리: {dist * -1:.1f}mm] ---")
+            dist = 0.0
+
+    print("="*64)
+
+
 def main():
+    init()
     print("Starting ArUco marker detection with ZED camera...")
     live_aruco_detection()
+    print("End marker detection with ZED camera...")
+    check_accept_data()
 
 if __name__ == "__main__":
     main()
