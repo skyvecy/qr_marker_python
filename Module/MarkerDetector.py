@@ -8,7 +8,7 @@ class MarkerDetector:
         self.temp = temp
         print(f"setting value: {temp}")
         print("MarkerDetector Initializing Completed.")
-    def init_zed_camera():
+    def init_zed_camera(self):
         zed = sl.Camera()
         input_type = sl.InputType()
         init = sl.InitParameters(input_t=input_type)
@@ -57,7 +57,7 @@ class MarkerDetector:
         return zed, left_image, right_image, P1, P2, camera_matrix_L, camera_matrix_R, intrinsics_L, intrinsics_R
                
     
-    def init_aruco_marker():
+    def init_aruco_marker(self):
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_50)
         aruco_params = cv2.aruco.DetectorParameters()
         #detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
@@ -67,7 +67,7 @@ class MarkerDetector:
 
         return aruco_dict, aruco_params, runtime_parameters
 
-    def get_probe_tip_pos(offset: np.ndarray, probe_center: np.ndarray, R: np.ndarray) -> np.ndarray:
+    def get_probe_tip_pos(self, offset: np.ndarray, probe_center: np.ndarray, R: np.ndarray) -> np.ndarray:
         """
         마커의 자세(R, t)와 캘리브레이션된 오프셋을 사용하여 프로브 팁의 월드 좌표를 계산합니다.
 
@@ -84,7 +84,7 @@ class MarkerDetector:
         tip_position_world = probe_center + (R @ offset)
         
         return tip_position_world
-    def get_marker_data(zed, left_image, right_image, 
+    def get_marker_data(self, zed, left_image, right_image, 
                         P1, P2,
                         camera_matrix_L, camera_matrix_R,
                         intrinsics_L, intrinsics_R,
