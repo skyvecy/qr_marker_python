@@ -1,10 +1,23 @@
 ﻿import numpy as np
 
+
 class Calibration:
+    probe_center_list = []
+    x_axes_list = []
+    y_axes_list = []
+    y_axes_list = []
     def __init__(self, offset):
         self.offset = offset
         print(f"setting value: {offset}")
         print("Calibration Initializing Completed.")
+
+    def add_data(self, probe_center, R):
+        probe_center_list.append(probe_center)
+        x_axes_list.append(R[:, 0])
+        y_axes_list.append(R[:, 1]) 
+        z_axes_list.append(R[:, 2])
+
+
     # Probe Calibration
     def calculate_optimal_offset(self, prove_centers, x_axes, y_axes, z_axes):
         global accept_data_list
@@ -27,20 +40,6 @@ class Calibration:
         side_num = 10       # 각 차원의 그리드 분할 수
         step_rate = 0.5     # 탐색 범위 축소 비율
         step_size = 0.3     # 초기 탐색 범위 (단위: meter)
-        #step_size = 300
-        # 시작점 (초기 추정 오프셋)
-        # C++ 코드의 값을 그대로 사용 (단위: meter)
-        #current_pos = np.array([-0.096295, 0.096295, 0.003867])
-        # 실제 측정 길이
-        #current_pos = np.array([-0.067006, 0.067650, 0.003617])
-        # 1차 캘리브레이션
-        #current_pos = np.array([-0.0667, 0.0692, 0.0016])
-        # 2차 캘리브레이션
-        #current_pos = np.array([-0.06845775, 0.06829175, 0.00501300])
-        # 3차 캘리브레이션
-        #current_pos = np.array([-0.06771506, 0.06812835, 0.00385960])
-        # 4차 캘리브레이션
-        #current_pos = np.array([-0.06743418, 0.06810218, 0.00329000])
         total_grid_points = side_num ** 3
         num_proves = len(prove_centers)
         
