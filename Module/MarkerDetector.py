@@ -1,6 +1,8 @@
 ﻿import pyzed.sl as sl
 import numpy as np
 import cv2
+from .calmath import rotationMatrixToEulerAngles
+from .calmath import compute_pose_from_corners
 import math
 
 class MarkerDetector:
@@ -14,7 +16,7 @@ class MarkerDetector:
         init = sl.InitParameters(input_t=input_type)
         init.camera_resolution = sl.RESOLUTION.HD1200
         init.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
-        init.depth_mode = sl.DEPTH_MODE.ULTRA
+        init.depth_mode = sl.DEPTH_MODE.NEURAL_LIGHT
         init.coordinate_units = sl.UNIT.MILLIMETER
 
         err = zed.open(init)
@@ -110,6 +112,9 @@ class MarkerDetector:
             win_size = (5, 5)
             zero_zone = (-1, -1)
 
+            currId = -1
+            point_pos = any
+            R = any
             if ids_l is not None and ids_r is not None:
                 for i, id_l in enumerate(ids_l):
                     if id_l in ids_r:
@@ -150,13 +155,14 @@ class MarkerDetector:
 
                             corner3d_pts[j] = pt_3d_cv  # 정규화된 3D 좌표 저장
 
-                        R, t = math.compute_pose_from_corners(corner3d_pts)
+                        R, t = compute_pose_from_corners(corner3d_pts)
 
                         # 오일러 각
-                        roll, pitch, yaw = math.rotationMatrixToEulerAngles(R)
+                        roll, pitch, yaw = rotationMatrixToEulerAngles(R)
 
-                        point_pos = points_3d_cv.ravel();
-
+                        point_pos = points_3d_cv.ravel()
+                        currId = id_l
+                        
                         print(f"🎯 ID {int(id_l)} 위치 (cv)(mm): {point_pos}")
                         print(f"🎯 ID {int(id_l)} 회전 값 (cv)(도): {roll * 180/math.pi}, {pitch* 180/math.pi}, {yaw* 180/math.pi}")
                         
@@ -170,11 +176,8 @@ class MarkerDetector:
             combined = np.hstack((left_np, right_np))
             resized_img = cv2.resize(combined, (1280, 480))
             cv2.imshow("Left | Right", resized_img)
-            loop_state = True
-            # 'q' 키 누르면 종료
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                loop_state = False
-            return (loop_state,id_l, point_pos, R)
+            cv2.waitKey(1) 
+            return currId, point_pos, R
         else:
             pass
 
