@@ -1,4 +1,4 @@
-import Module.MarkerDetector as cam_detector
+﻿import Module.MarkerDetector as cam_detector
 import Module.Calibration as cali
 import Module.Network as net
 import numpy as np
@@ -9,19 +9,22 @@ def init():
     probe_cal = cali.Calibration(init_offset)
     networkManager = net.Network(1)
 
-
-
     main_loop(detector, probe_cal, networkManager)
 
 def main_loop(detector, calibration, network):
+    # Init Data
     zed, left_image, right_image, P1, P2, camera_matrix_L, camera_matrix_R, intrinsics_L, intrinsics_R = detector.init_zed_camera()
     aruco_dict, aruco_params, runtime_parameters = detector.init_aruco_marker()
     init_offset = calibration.self.offset
 
     while True:
+        # get marker data
         loop_state, id_l, point_pos, R = detector.get_marker_data(zed, left_image, right_image, P1, P2, camera_matrix_L, camera_matrix_R, intrinsics_L, intrinsics_R,
                                                                   aruco_dict, aruco_params, runtime_parameters,
                                                                   init_offset)
+        # probe calibration
+        # input 방식 수정
+        # network
         if loop_state == False:
             break
 
