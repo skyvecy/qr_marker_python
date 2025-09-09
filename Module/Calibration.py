@@ -16,22 +16,25 @@ class Calibration:
         print("Calibration Initializing Completed.")
 
     def add_data(self, probe_center, R):
-        global probe_center_list, x_axes_list, y_axes_list, z_axes_list
-        probe_center_list.append(probe_center)
-        x_axes_list.append(R[:, 0])
-        y_axes_list.append(R[:, 1]) 
-        z_axes_list.append(R[:, 2])
+        # m단위로 변환
+        self.probe_center_list.append(probe_center/1000)
+        self.x_axes_list.append(R[:, 0])
+        self.y_axes_list.append(R[:, 1]) 
+        self.z_axes_list.append(R[:, 2])
         
-    def get_list_count():
-        global probe_center_list
-        return len(probe_center_list)
+    def get_list_count(self):
+        if not self.probe_center_list:
+            return -1
+        else:
+            return len(self.probe_center_list)
 
-    def reset_lists():
-        global probe_center_list, x_axes_list, y_axes_list, z_axes_list
-
+    def reset_lists(self):
+        self.probe_center_list = []
+        self.x_axes_list = []
+        self.y_axes_list = []
+        self.z_axes_list = []
     # Probe Calibration
     def calculate_optimal_offset(self):
-        global accept_data_list, probe_center_list, x_axes_list, y_axes_list, z_axes_list
         init_offset = self.offset
         error_avg = 0.0
         """
@@ -53,7 +56,7 @@ class Calibration:
         step_rate = 0.5     # 탐색 범위 축소 비율
         step_size = 0.3     # 초기 탐색 범위 (단위: meter)
         total_grid_points = side_num ** 3
-        num_proves = len(probe_center_list)
+        num_proves = len(self.probe_center_list)
         
         print("🚀 최적 오프셋 탐색을 시작합니다...")
         offset_list = []
@@ -82,10 +85,10 @@ class Calibration:
                         # 이 오프셋을 모든 측정 데이터에 적용하여 월드 좌표들을 계산
                         world_positions = np.zeros((num_proves, 3))
                         for i in range(num_proves):
-                            world_positions[i] = probe_center_list[i] + \
-                                                 x_axes_list[i] * local_offset[0] + \
-                                                 y_axes_list[i] * local_offset[1] + \
-                                                 z_axes_list[i] * local_offset[2]
+                            world_positions[i] = self.probe_center_list[i] + \
+                                                 self.x_axes_list[i] * local_offset[0] + \
+                                                 self.y_axes_list[i] * local_offset[1] + \
+                                                 self.z_axes_list[i] * local_offset[2]
                         
                         # 계산된 월드 좌표들의 중심점(centroid)을 구함
                         centroid = np.mean(world_positions, axis=0)
@@ -119,29 +122,26 @@ class Calibration:
         error_avg /= step_num
         
         if error_avg < self.accept_error:
-            accept_data_list.append(probe_center_list, offset_list, error_list)
+            self.accept_data_list.append(self.probe_center_list, offset_list, error_list)
 
         #return error_avg, probe_center_list, offset_list, error_list
 
-    def check_accept_data():
-        global accept_data_list
+    def check_accept_data(self):
+        #global accept_data_list
         print("\n" + "="*25 + " 최종 합격 데이터 " + "="*25)
         dist = 0.0
-        if not accept_data_list:
+        if not self.accept_data_list:
             print("수집된 데이터가 없습니다.")
         else:
             # enumerate를 사용하면 인덱스 번호(i)와 항목(data)을 한번에 가져올 수 있습니다.
-            for i, data in enumerate(accept_data_list):
+            for i, data in enumerate(self.accept_data_list):
                 # data는 (offset, error) 형태의 튜플입니다.
                 pose = data[0]
                 offset = data[1]
                 error = data[2]
     
-                # f-string 서식을 이용해 보기 좋게 출력
-                print(f"--- 데이터 [{i+1}/{len(accept_data_list)}] ---")
+                print(f"--- 데이터 [{i+1}/{len(self.accept_data_list)}] ---")
     
-                # NumPy 배열을 보기 좋게 출력하기 위한 서식
-                #offset_str = np.array2string(offset, formatter={'float_kind':lambda x: "%.6f" % x})
                 for j in range(len(pose)):
                     dist += pose[j][2]
                     print(f"  center pose: {pose[j]}")
@@ -149,7 +149,7 @@ class Calibration:
                     print(f"  error: {error[j]:.4f} mm")
                 dist /= 10
                 dist *= 1000
-                print(f"--- 데이터 [{i+1}/{len(accept_data_list)} 거리: {dist * -1:.1f}mm] ---")
+                print(f"--- 데이터 [{i+1}/{len(self.accept_data_list)} 거리: {dist * -1:.1f}mm] ---")
                 dist = 0.0
     
         print("="*64)
