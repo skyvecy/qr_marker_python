@@ -91,7 +91,8 @@ class MarkerDetector:
                         camera_matrix_L, camera_matrix_R,
                         intrinsics_L, intrinsics_R,
                         aruco_dict, aruco_params, runtime_parameters,
-                        init_offset):
+                        init_offset
+                        ):
         if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
             zed.retrieve_image(left_image, sl.VIEW.LEFT)
             zed.retrieve_image(right_image, sl.VIEW.RIGHT)
@@ -112,14 +113,15 @@ class MarkerDetector:
             win_size = (5, 5)
             zero_zone = (-1, -1)
 
+            markerinfodata_list = []
             currId = -1
-            point_pos = any
-            R = any
+            point_pos = np.zeros(3,)
+            R = np.zeros((3,3))
             if ids_l is not None and ids_r is not None:
                 for i, id_l in enumerate(ids_l):
                     if id_l in ids_r:
                         idx_r = np.where(ids_r == id_l)[0][0]
-                        
+                        # 특정 id 값만 가져온다.
                         #왜곡
                         #undistorted_pts_l = cv2.undistortPoints(corners_l, camera_matrix_L, intrinsics_L.disto)
                         #undistorted_pts_r = cv2.undistortPoints(corners_r, camera_matrix_R, intrinsics_R.disto)
@@ -163,21 +165,26 @@ class MarkerDetector:
                         point_pos = points_3d_cv.ravel()
                         currId = id_l
                         
-                        print(f"🎯 ID {int(id_l)} 위치 (cv)(mm): {point_pos}")
-                        print(f"🎯 ID {int(id_l)} 회전 값 (cv)(도): {roll * 180/math.pi}, {pitch* 180/math.pi}, {yaw* 180/math.pi}")
-                        
+                        #print(f"🎯 ID {int(id_l)} 위치 (cv)(mm): {point_pos}")
+                        #print(f"🎯 ID {int(id_l)} 회전 값 (cv)(도): {roll * 180/math.pi}, {pitch* 180/math.pi}, {yaw* 180/math.pi}")
+                        markerinfodata_list.append((currId, point_pos, R))
                         # 시각화
                         cv2.circle(left_np, tuple(center_l.ravel().astype(int)), 5, (0, 255, 0), -1)
                         cv2.circle(right_np, tuple(center_r.ravel().astype(int)), 5, (0, 0, 255), -1)
 
 
-
+            #print(markerinfodata_list)
             # 화면 출력
             combined = np.hstack((left_np, right_np))
             resized_img = cv2.resize(combined, (1280, 480))
             cv2.imshow("Left | Right", resized_img)
             cv2.waitKey(1) 
-            return currId, point_pos, R
+
+            return markerinfodata_list
+            #if target_id == currId:
+            #return currId, point_pos, R
+            #else:
+            #    return -1, np.zeros(3,), np.zeros((3,3))
         else:
             pass
 
