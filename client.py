@@ -14,12 +14,24 @@ class Client:
         self.client_socket.sendto(encoded_message, (self.ip, self.port))
         print(f"'{message}' 메시지를 {self.ip}:{self.port} 로 보냈습니다.")
         self.client_socket.settimeout(5)
-        data, server_address = self.client_socket.recvfrom(260)
+        data, server_address = self.client_socket.recvfrom(1024)
         print(f"서버 {server_address}로부터 {len(data)} 바이트의 데이터를 받았습니다.")
-        print(f"받은 데이터(바이트): {data}")
+        #print(f"받은 데이터(바이트): {data}")
+        data_view = memoryview(data)
         FORMAT_STRING = '<i12f'
-        unpacked_data = struct.unpack(FORMAT_STRING, data)
-        print(f"언패킹된 데이터: {unpacked_data}")
+        receive_count = 5
+        per_count = len(data) // receive_count
+        for i in range(receive_count):
+            unpacked_tuple = struct.unpack_from(FORMAT_STRING, data_view, i*per_count)
+
+
+            print(f"index[{i}] State: {unpacked_tuple[0]}")
+            print(f"index[{i}] Position: {unpacked_tuple[1]}, {unpacked_tuple[2]}, {unpacked_tuple[3]}")
+            print(f"index[{i}] X_Axis: {unpacked_tuple[4]}, {unpacked_tuple[5]}, {unpacked_tuple[6]}")
+            print(f"index[{i}] Y_Axis: {unpacked_tuple[7]}, {unpacked_tuple[8]}, {unpacked_tuple[9]}")
+            print(f"index[{i}] Z_Axis: {unpacked_tuple[10]}, {unpacked_tuple[11]}, {unpacked_tuple[12]}")
+
+        FORMAT_STRING = '<i12f'
 
 
 BROADCAST_IP = '255.255.255.255'
@@ -46,7 +58,7 @@ try:
     client = Client(server_ip, 9001)
     while True:
         client.send()
-        time.sleep(2)
+        #time.sleep(1)
 
 except socket.timeout:
     print("타임아웃: 서버를 찾지 못했습니다.")
