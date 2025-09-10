@@ -4,6 +4,7 @@ import threading
 import time
 
 class Network:
+    dto_list = []
     def __init__(self, port, broadcast_port):
         self.host = self.get_local_ip()#'127.0.0.1' #localHost
         self.port = port
@@ -12,6 +13,10 @@ class Network:
         # socket.AF_INET: IPv4를 사용
         # socket.SOCK_DGRAM: UDP 통신을 의미
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        self.broadcast_thread = threading.Thread(target = self.announce_ip, args=("Broadcaster",))
+        self.send_data_thread = threading.Thread(target = self.receive, args=("Receiver",))
+
         print(f"setting value: {port}")
         print("Network Initializing Completed.")
 
@@ -20,14 +25,15 @@ class Network:
         self.server_socket.bind((self.host, self.port))
 
         print(f"UDP 서버가 {self.host}:{self.port} 에서 시작되었습니다.")
-        thread1 = threading.Thread(target = self.announce_ip, args=("Broadcaster",))
-        thread2 = threading.Thread(target = self.receive, args=("Receiver",))
+        #thread1 = threading.Thread(target = self.announce_ip, args=("Broadcaster",))
+        #thread2 = threading.Thread(target = self.receive, args=("Receiver",))
 
-        thread1.start()
-        thread2.start()
+        self.broadcast_thread.start()
+        self.send_data_thread.start()
 
-        thread1.join()
-        thread2.join()
+    def join_thread(self):
+        self.broadcast_thread.join()
+        self.send_data_thread.join()
 
     def get_local_ip(self):
         """자신의 로컬 IP 주소를 반환하는 함수"""
@@ -71,43 +77,38 @@ class Network:
     def receive(self, name):
         while True:
             # 클라이언트로부터 데이터 수신
-            data, client_address = self.server_socket.recvfrom(65535)
+            data, client_address = self.server_socket.recvfrom(16)
 
             # 수신된 데이터와 클라이언트 주소 출력
             print(f"클라이언트 {client_address} 로부터 다음 데이터를 받았습니다: {data.decode('utf-8')}")
 
             # 응답 메시지 생성
             response = "서버가 메시지를 잘 받았습니다! 데이터를 보냅니다."
-            index = 21
-            
-            x_pos = 251.242
-            y_pos = -105.2341
-            z_pos = 21.8
-
-            x_axis_x = 235.1
-            x_axis_y = 0.235
-            x_axis_z = 2.51
-            
-            y_axis_x = 5.1042
-            y_axis_y = 3.1042
-            y_axis_z = 2.1642
-            
-            z_axis_x = 52.251
-            z_axis_y = 24.152
-            z_axis_z = 831.002
 
             # '<'는 리틀 엔디안(little-endian)을 의미
             # 'i'는 int (4바이트), 'f'는 float (4바이트)
-            format_string = '<i12f'
+            
+            format_string = '!i12f'
 
             # 모든 변수를 튜플로 묶음
-            data_tuple = (index, x_pos, y_pos, z_pos,
-                          x_axis_x, x_axis_y, x_axis_z,
-                          y_axis_x, y_axis_y, y_axis_z,
-                          z_axis_x, z_axis_y, z_axis_z)
+            #data_tuple = (self.dto_list[0], self.dto_list[1], self.dto_list[2], self.dto_list[3],
+            #              self.dto_list[4], self.dto_list[5], self.dto_list[6],
+            #              self.dto_list[7], self.dto_list[8], self.dto_list[9],
+            #              self.dto_list[10], self.dto_list[11], self.dto_list[0])
+            # Define the struct format string
+            FORMAT = '<i12f'
 
+            # Use a bytearray for efficient concatenation
+            # This avoids creating a new byte string in each loop iteration
+            packed_data = bytearray()
+
+            # Iterate through the list and pack each object
+            for dto in self.dto_list:
+                # Use the format string and the tuple of values from the dataclass
+                # The __dict__.values() or asdict() method can be used here
+                packed_data.extend(struct.pack(FORMAT, *dto.__dict__.values()))
             # struct.pack을 사용하여 바이너리 패킷으로 묶기
-            packed_data = struct.pack(format_string, *data_tuple)
+            #packed_data = struct.pack(format_string, *data_tuple)
 
             print(f"포맷 스트링: {format_string}")
             print(f"패킷 크기: {len(packed_data)} 바이트")
