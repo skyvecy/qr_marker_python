@@ -1,8 +1,8 @@
 ﻿import pyzed.sl as sl
 import numpy as np
 import cv2
-from .calmath import rotationMatrixToEulerAngles
-from .calmath import compute_pose_from_corners
+from .ComputeMath import rotationMatrixToEulerAngles
+from .ComputeMath import compute_pose_from_corners
 import math
 
 class MarkerDetector:
