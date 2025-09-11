@@ -124,18 +124,13 @@ class Calibration:
         if error_avg < self.accept_error:
             self.accept_data_list.append(self.probe_center_list, offset_list, error_list)
 
-        #return error_avg, probe_center_list, offset_list, error_list
-
     def check_accept_data(self):
-        #global accept_data_list
         print("\n" + "="*25 + " 최종 합격 데이터 " + "="*25)
         dist = 0.0
         if not self.accept_data_list:
             print("수집된 데이터가 없습니다.")
         else:
-            # enumerate를 사용하면 인덱스 번호(i)와 항목(data)을 한번에 가져올 수 있습니다.
             for i, data in enumerate(self.accept_data_list):
-                # data는 (offset, error) 형태의 튜플입니다.
                 pose = data[0]
                 offset = data[1]
                 error = data[2]
