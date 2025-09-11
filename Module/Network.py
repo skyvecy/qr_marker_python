@@ -15,7 +15,7 @@ class Network:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self.broadcast_thread = threading.Thread(target = self.announce_ip, args=("Broadcaster",))
-        self.send_data_thread = threading.Thread(target = self.receive, args=("Receiver",))
+        self.send_data_thread = threading.Thread(target = self.response, args=("Responser",))
 
         print(f"setting value: {port}")
         print("Network Initializing Completed.")
@@ -74,7 +74,7 @@ class Network:
             except Exception as e:
                 print(f"오류 발생: {e}")
 
-    def receive(self, name):
+    def response(self, name):
         while True:
             # 클라이언트로부터 데이터 수신
             data, client_address = self.server_socket.recvfrom(16)
@@ -87,15 +87,6 @@ class Network:
 
             # '<'는 리틀 엔디안(little-endian)을 의미
             # 'i'는 int (4바이트), 'f'는 float (4바이트)
-            
-            format_string = '!i12f'
-
-            # 모든 변수를 튜플로 묶음
-            #data_tuple = (self.dto_list[0], self.dto_list[1], self.dto_list[2], self.dto_list[3],
-            #              self.dto_list[4], self.dto_list[5], self.dto_list[6],
-            #              self.dto_list[7], self.dto_list[8], self.dto_list[9],
-            #              self.dto_list[10], self.dto_list[11], self.dto_list[0])
-            # Define the struct format string
             FORMAT = '<i12f'
 
             # Use a bytearray for efficient concatenation
@@ -110,8 +101,7 @@ class Network:
             # struct.pack을 사용하여 바이너리 패킷으로 묶기
             #packed_data = struct.pack(format_string, *data_tuple)
 
-            print(f"포맷 스트링: {format_string}")
-            print(f"패킷 크기: {len(packed_data)} 바이트")
-            # 출력: 패킷 크기: 52 바이트 (4바이트 + 12 * 4바이트)
+            print(f"포맷 스트링: {FORMAT}")
+            print(f"패킷 크기: {len(packed_data)} 바이트")\
             # 클라이언트에게 응답 전송
             self.server_socket.sendto(packed_data, client_address)
