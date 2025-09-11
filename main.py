@@ -12,6 +12,7 @@ isCalibration = False
 def init():
     print('init start')
     detector = cam_detector.MarkerDetector(1)
+    detector.init_aruco_marker()
     init_offset = np.array([-0.06841773, 0.06819089, 0.00421293])
     probe_cal = cali.Calibration(init_offset, 1.5)
     
@@ -20,10 +21,6 @@ def init():
 def cam_loop(detector, calibration):
     global isCalibration, isStopCamLoop
     print('main_loop Start')
-    # Init Data
-    zed, left_image, right_image, P1, P2, camera_matrix_L, camera_matrix_R, intrinsics_L, intrinsics_R = detector.init_zed_camera()
-    aruco_dict, aruco_params, runtime_parameters = detector.init_aruco_marker()
-    init_offset = calibration.offset
 
     network = net.Network(9001, 9999)
     network.init_server()
@@ -41,10 +38,7 @@ def cam_loop(detector, calibration):
         network.dto_list.append(marker_data)
     
     while True:
-        data_list = detector.get_marker_data(zed, left_image, right_image, P1, P2, camera_matrix_L, camera_matrix_R, intrinsics_L, intrinsics_R,
-                                                        aruco_dict, aruco_params, runtime_parameters,
-                                                        init_offset)
-        
+        data_list = detector.get_marker_data()
         for index, value in enumerate(marker_id_list):
             network.dto_list[index].set_data(0, np.zeros(3,), np.zeros((3,3)))
             if len(data_list) > 0:
@@ -93,6 +87,7 @@ def cam_loop(detector, calibration):
 #        return False
 
 # 리스너를 생성하고 백그라운드에서 실행합니다.
+# 메인 쓰레드가 동작하지 않는 문제가 있음
 #with keyboard.Listener(on_press=control_calibration, on_release=on_release) as listener:
 #    listener.join() # 리스너가 종료될 때까지 메인 스레드를 대기시킵니다.
 
