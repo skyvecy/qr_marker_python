@@ -2,15 +2,15 @@
 QR 마커 카메라 R&D 프로젝트
 
 # Introduction
-OpenCV의 ArUco Marker 인식 기능을 활용해 R&D를 진행한다.
-Sterolabs 사의 [Zed X Camera](https://www.stereolabs.com/en-kr/store/products/zed-x-stereo-camera)를 사용한다.
-Nvidia Jetson 환경에서 개발을 진행한다.
+- OpenCV의 ArUco Marker 인식 기능을 활용해 R&D를 진행한다.
+- Sterolabs 사의 [Zed X Camera](https://www.stereolabs.com/en-kr/store/products/zed-x-stereo-camera)를 사용한다.
+- Nvidia Jetson 환경에서 개발을 진행한다.
 
 # Environment
 ## Software
-Python Version: 3.10.12 
-OS: Linux(Obuntu 22.04.5 LTS) / L4T(Linux for Tegra)(R36.4.4)
-Jetpack: 6.2.1
+- Python Version: 3.10.12 
+- OS: Linux(Obuntu 22.04.5 LTS) / L4T(Linux for Tegra)(R36.4.4)
+- Jetpack: 6.2.1
 ### Pacakages
 #### External
 - pyzed(5.0)
@@ -21,9 +21,9 @@ Jetpack: 6.2.1
 - cv2(4.8.0)
     - 시스템 패키지 관리자(apt)를 통해 jetPack에 의해 사전 설치 됨.
 ## Hardware
-Camera: [Zed X](https://www.stereolabs.com/en-kr/store/products/zed-x-stereo-camera)
-Device: [NVIDIA Jetson Orin Nano Developer Kit](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/nano-super-developer-kit/)
-CPU Architecture: ARM64
+- Camera: [Zed X](https://www.stereolabs.com/en-kr/store/products/zed-x-stereo-camera)
+- Device: [NVIDIA Jetson Orin Nano Developer Kit](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/nano-super-developer-kit/)
+- CPU Architecture: ARM64
 
 
 # Refereneces
