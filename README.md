@@ -40,10 +40,6 @@ QR 마커 카메라 R&D 프로젝트
             - 만약 데이터가 존재하지 않으면, 아래 데이터들은 모두 0 값으로 전달
          - 12바이트: 마커 위치
          - 36바이트: X Axis 값(12), Y Axis 값(12), Z Axis 값(12)
-[파이썬 클라이언트(동영상)](https://drive.google.com/file/d/1Qcn1sj8csFSdYuoJL9s6zLIP6NwAup-X/view?usp=sharing)
-- Broadcast를 활용한 로컬 IP 찾기 로직
-- 9999번 포트로 동작
-- 16바이트 미만의 문자열(send message)을 서버로 전달  후 서버 데이터 셋 byte[] 형태로 전달 받음
 
 # Refereneces
 ## Zed Camera
