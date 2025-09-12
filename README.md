@@ -25,6 +25,25 @@ QR 마커 카메라 R&D 프로젝트
 - Device: [NVIDIA Jetson Orin Nano Developer Kit](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/nano-super-developer-kit/)
 - CPU Architecture: ARM64
 
+# QR 마커 서버 동작 환경
+
+[QR 서버 버전(동영상)](https://drive.google.com/file/d/1ZapBdnMDqIu2dd6qPZs1M8eKOyYbKVMQ/view?usp=sharing)
+- Broadcast를 활용한 로컬 IP 찾기 로직 적용
+   - **9999**번 포트로 동작
+- UDP 서버 동작
+   - 9001번 포트로 동작
+   - 클라이언트가 데이터 요청을 하면 해당 데이터 셋으로 데이터 전송
+      - 16byte 미만 값을 보내야 한다.
+      - 바이트 오더: 리틀 엔디안
+      - 데이터 셋(byte[]): 52바이트 * 5 = 260바이트
+         - 4바이트: 데이터 존재 유무(0, 1)
+            - 만약 데이터가 존재하지 않으면, 아래 데이터들은 모두 0 값으로 전달
+         - 12바이트: 마커 위치
+         - 36바이트: X Axis 값(12), Y Axis 값(12), Z Axis 값(12)
+[파이썬 클라이언트(동영상)](https://drive.google.com/file/d/1Qcn1sj8csFSdYuoJL9s6zLIP6NwAup-X/view?usp=sharing)
+- Broadcast를 활용한 로컬 IP 찾기 로직
+- 9999번 포트로 동작
+- 16바이트 미만의 문자열(send message)을 서버로 전달  후 서버 데이터 셋 byte[] 형태로 전달 받음
 
 # Refereneces
 ## Zed Camera
