@@ -47,11 +47,11 @@ QR 마커 카메라 R&D 프로젝트
 
 # Refereneces
 ## Zed Camera
-[Zed SDK Download](https://www.stereolabs.com/en-kr/developers/release)
-- Nvidia Jetson 페이지에서 **ZED SDK for JetPack 6.1 and 6.2 (L4T 36.4) 5.0 (Jetson Orin, CUDA 12.6)**를 찾아, 다운로드 하면 됨.
-[Zed SDK Docs](https://www.stereolabs.com/docs)
-[Zed 카메라와 Nvidia Jetson 디바이스와 물리적인 연결 방법](https://www.stereolabs.com/docs/embedded/zed-link/mono-jetson-orin-nano-devkit-setup)
+- [Zed SDK Download](https://www.stereolabs.com/en-kr/developers/release)
+   - Nvidia Jetson 페이지에서 **ZED SDK for JetPack 6.1 and 6.2 (L4T 36.4) 5.0 (Jetson Orin, CUDA 12.6)**를 찾아, 다운로드 하면 됨.
+- [Zed SDK Docs](https://www.stereolabs.com/docs)
+- [Zed 카메라와 Nvidia Jetson 디바이스와 물리적인 연결 방법](https://www.stereolabs.com/docs/embedded/zed-link/mono-jetson-orin-nano-devkit-setup)
 ## Development
-[ArUco Marker Generator](https://chev.me/arucogen/)
+- [ArUco Marker Generator](https://chev.me/arucogen/)
 ## Linux
-[Setting](https://drive.google.com/drive/folders/17sdCqwlKatiwnEhSNNZFgLtwJwxvsXKn?usp=sharing)
+- [Setting](https://drive.google.com/drive/folders/17sdCqwlKatiwnEhSNNZFgLtwJwxvsXKn?usp=sharing)
